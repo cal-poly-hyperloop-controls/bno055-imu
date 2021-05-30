@@ -6,6 +6,9 @@
 
 Adafruit_BNO055 bno = Adafruit_BNO055(-1, 0x28);
 
+// Time when reading is sampled from IMU [ms]
+uint32_t  currentTime, lastTime = 0;
+
 void setup() {
   Serial.begin(9600);
   Serial.println("BNO055 IMU");
@@ -22,16 +25,46 @@ void setup() {
 }
 
 void loop() {
+  // Save sample time
+  currentTime = millis();
+
+  // Grab linear acceleration data from IMU
   imu::Vector<3> linAccel = bno.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
 
-  Serial.print("X: ");
-  Serial.print(linAccel.x(), 5);
-  Serial.print(" Y: ");
-  Serial.print(linAccel.y());
-  Serial.print(" Z: ");
-  Serial.print(linAccel.z());
+  double xLinAccel = linAccel.x();
+  double yLinAccel = linAccel.y();
+  double zLinAccel = linAccel.z();
+
+  // Print the obtained linear accel data
+  Serial.print("X accel: ");
+  Serial.print(xLinAccel, 5);
+  Serial.print(" Y accel: ");
+  Serial.print(yLinAccel, 5);
+  Serial.print(" Z accel: ");
+  Serial.print(zLinAccel, 5);
+  Serial.print("\t\t");
+
+  // Print and calculate velocity from accel: v = a*t, but don't calculate
+  // velocity for the first sample (aka can't find velocity with only one 
+  // accel data point)
+  if (lastTime > 0) {
+    uint32_t deltaTime = currentTime - lastTime; 
+
+    Serial.print("X vel: ");
+    Serial.print(xLinAccel * deltaTime, 5);
+    Serial.print(" Y vel: ");
+    Serial.print(yLinAccel * deltaTime, 5);
+    Serial.print(" Z vel: ");
+    Serial.print(zLinAccel * deltaTime, 5);
+    Serial.print("\t\t");
+  }
+  
+  
   Serial.println("");
 
+  lastTime = currentTime;
+
+  // Wait a bit before reading the data again
   delay(BNO055_SAMPLERATE_DELAY_MS);
 
 }
